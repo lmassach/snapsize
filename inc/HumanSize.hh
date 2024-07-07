@@ -19,10 +19,11 @@
  */
 #include <iostream>
 
+/// Utility class to print file sizes in human-readable format
 class HumanSize {
 public:
-  explicit HumanSize() : HumanSize(0.0) {}
-  HumanSize(double sz);
+  HumanSize() : HumanSize(0.0) {}
+  explicit HumanSize(double sz);
 
   friend std::ostream& operator<<(std::ostream& stream, const HumanSize& hsz);
 

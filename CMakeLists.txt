@@ -12,7 +12,14 @@ set(CMAKE_DEBUG_POSTFIX _debug)
 # Not a real library, just used to set common compiler flags
 add_library(snapsize_compiler_flags INTERFACE)
 
-add_executable(de src/de.cc src/HumanSize.cc)
+list(APPEND common_sources
+    src/Extents.cc
+    src/Extents_ioctl.cc
+    src/HumanSize.cc
+    src/UniqueFileDescriptor.cc
+)
+
+add_executable(de src/de.cc ${common_sources})
 set_target_properties(de PROPERTIES DEBUG_POSTFIX ${CMAKE_DEBUG_POSTFIX})
 target_link_libraries(de PUBLIC snapsize_compiler_flags)
 

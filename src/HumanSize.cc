@@ -32,6 +32,8 @@ HumanSize::HumanSize(double sz) : m_sz(sz), m_suffix(' ') {
   }
 
 ostream& operator<<(ostream& stream, const HumanSize& hsz) {
+  if (hsz.m_suffix == ' ')
+    return (stream << fixed << setprecision(0) << hsz.m_sz);
   const int p = (hsz.m_sz < 10.0) ? 2 : (hsz.m_sz < 100.0) ? 1 : 0;
   return (stream << fixed << setprecision(p) << hsz.m_sz << hsz.m_suffix);
 }
