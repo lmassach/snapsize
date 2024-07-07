@@ -8,3 +8,9 @@ This is essentially an utility to compute the disk usage of files, much like
 [BTRFS](https://wiki.archlinux.org/title/btrfs)) and to count the repeated
 block only once. It makes use of the kernel's
 [fiemap ioctl](https://www.kernel.org/doc/Documentation/filesystems/fiemap.txt).
+
+
+## Compile instructions
+Requires `cmake` and a compiler supporting C++17.
+
+See `compile.sh` for example building commands.
