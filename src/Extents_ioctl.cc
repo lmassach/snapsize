@@ -53,13 +53,13 @@ static void insertFromFileImpl(const char* path, ExtentSet& es, UniqueMAllocPtr<
     // i.e. data in the same block as metadata (happens for short files), which
     // means that typically a dummy extent is returned (block #0)
     if (fm->fm_extents[i].fe_flags & (FIEMAP_EXTENT_UNKNOWN | FIEMAP_EXTENT_NOT_ALIGNED)) {
-      std::cerr << "DEBUG "
-        << "path=" << path
-        << ", i=" << i << ", n=" << fm->fm_mapped_extents
-        << ", logical=" << fm->fm_extents[i].fe_logical
-        << ", physical=" << fm->fm_extents[i].fe_physical
-        << ", length=" << fm->fm_extents[i].fe_length
-        << ", flags=" << fm->fm_extents[i].fe_flags << '\n';
+      // std::cerr << "DEBUG "
+      //   << "path=" << path
+      //   << ", i=" << i << ", n=" << fm->fm_mapped_extents
+      //   << ", logical=" << fm->fm_extents[i].fe_logical
+      //   << ", physical=" << fm->fm_extents[i].fe_physical
+      //   << ", length=" << fm->fm_extents[i].fe_length
+      //   << ", flags=" << fm->fm_extents[i].fe_flags << '\n';
       continue;
     }
     es.insert(Extent(fm->fm_extents[i].fe_physical, fm->fm_extents[i].fe_length));
@@ -73,14 +73,26 @@ void ExtentSet::insertFromFile(const char* path) {
 
 void ExtentSet::insertFromDir(const char* path, bool stopOnError) {
   UniqueMAllocPtr<fiemap> fm(sizeof(fiemap)); // Reuse the same memory to save allocation calls
-  for (const std::filesystem::directory_entry& fp : std::filesystem::recursive_directory_iterator(path)) {
-    try {
-      if (!fp.is_symlink() && fp.is_regular_file())
-        insertFromFileImpl(fp.path().c_str(), *this, fm);
-    } catch (const std::exception& ex) {
-      if (stopOnError)
-        throw;
-      std::cerr << fp.path() << ": " << ex.what() << std::endl;
+  std::string lastFilePath;
+  try {
+    for (
+      const std::filesystem::directory_entry& fp : std::filesystem::recursive_directory_iterator(
+        path, std::filesystem::directory_options::skip_permission_denied
+      )
+    ) {
+      lastFilePath = fp.path();
+      try {
+        if (!fp.is_symlink() && fp.is_regular_file())
+          insertFromFileImpl(fp.path().c_str(), *this, fm);
+      } catch (const std::exception& ex) {
+        if (stopOnError)
+          throw;
+        std::cerr << fp.path() << ": " << ex.what() << std::endl;
+      }
     }
+  } catch (const std::exception& ex) {
+    std::cerr << "ExtentSet::insertFromDir: last file before error: " << lastFilePath
+      << "\nExtentSet::insertFromDir: stopping on error: " << ex.what() << std::endl;
+    throw;
   }
 }

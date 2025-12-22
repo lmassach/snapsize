@@ -71,15 +71,15 @@ int main(int argc, char** argv) {
           es.insertFromFile(p.c_str());
         else
           throw runtime_error("Neither regular file nor directory");
+        } catch (const exception& ex) {
+          cerr << argv[i] << ": " << ex.what() << endl;
+        }
         // Output
         if (humanReadable)
           cout << HumanSize(es.totalLength()) << '\t' << argv[i] << '\n';
         else
           cout << es.totalLength() << '\t' << argv[i] << '\n';
         total |= es;
-      } catch (const exception& ex) {
-        cerr << argv[i] << ": " << ex.what() << endl;
-      }
     }
   }
 

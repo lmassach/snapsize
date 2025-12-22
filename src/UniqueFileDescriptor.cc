@@ -27,7 +27,7 @@
 using namespace std::string_literals;
 
 UniqueFileDescriptor::UniqueFileDescriptor(const char* file, int flag) : m_fd(-1), m_path(file) {
-  m_fd = open(m_path, flag);
+  m_fd = open(m_path.c_str(), flag);
   if (m_fd < 0)
     throw std::runtime_error("Could not open file: "s + m_path);
 }
@@ -48,5 +48,5 @@ void UniqueFileDescriptor::close() {
   if (m_fd > -1)
     ::close(m_fd);
   m_fd = -1;
-  m_path = nullptr;
+  m_path.clear();
 }

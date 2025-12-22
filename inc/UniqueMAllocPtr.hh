@@ -28,10 +28,9 @@ public:
   UniqueMAllocPtr() : m_ptr(nullptr), m_size(0) {}
 
   /// Normal constructor, calling malloc and throwing std::runtime_error on failure
-  UniqueMAllocPtr(std::size_t sz) {
+  UniqueMAllocPtr(std::size_t sz) : m_ptr(nullptr), m_size(sz) {
     if (!(m_ptr = (T*)std::malloc(sz)))
       throw std::runtime_error("malloc failed");
-    m_size = sz;
   }
 
   /// Destructor. Calls free if the pointer is non-null.

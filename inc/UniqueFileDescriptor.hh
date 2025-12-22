@@ -17,13 +17,14 @@
  * You should have received a copy of the GNU General Public License
  * along with snapsize. If not, see <https://www.gnu.org/licenses/>.
  */
+#include <string>
 #include <utility>
 
 /// Auto-closing file descriptor.
 class UniqueFileDescriptor {
 public:
   /// Default constructor, initializes an invalid descriptor and an empty path
-  UniqueFileDescriptor() : m_fd(-1), m_path(nullptr) {}
+  UniqueFileDescriptor() : m_fd(-1) {}
 
   /// Normal constructor, calls libc's open with the given arguments.
   /// Throws std::runtime_error if the return value of open is invalid.
@@ -60,12 +61,12 @@ public:
   inline operator bool() const { return m_fd > -1; }
 
   /// Returns the file path passed to libc's open, or an empty string
-  inline const char* getPath() const { return m_path; }
+  inline const std::string& getPath() const { return m_path; }
 
 private:
   /// Closes the file descriptor (if valid) and sets m_fd and m_path to -1 and nullptr
   void close();
 
   int m_fd;
-  const char* m_path;
+  std::string m_path;
 };
