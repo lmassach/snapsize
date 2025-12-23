@@ -49,6 +49,8 @@ CTestTestfile.cmake
 _deps
 CMakeUserPresets.json
 
-# Install directories
+# Build and install directories
 bin/
 share/
+install/
+build/
