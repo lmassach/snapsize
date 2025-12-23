@@ -74,10 +74,15 @@ void ExtentSet::insertFromFile(const char* path) {
 void ExtentSet::insertFromDir(const char* path, bool stopOnError) {
   UniqueMAllocPtr<fiemap> fm(sizeof(fiemap)); // Reuse the same memory to save allocation calls
   std::string lastFilePath;
+  bool stoppingOnError = false;
   try {
     for (
       const std::filesystem::directory_entry& fp : std::filesystem::recursive_directory_iterator(
         path, std::filesystem::directory_options::skip_permission_denied
+        // skip_permission_denied will prevent us from reporting when a
+        // directory is inaccessible; however, not using skip_permission_denied
+        // would result in stopping at the first inaccessible directory, which
+        // is even worse; follow_directory_symlink is not used *on purpose*
       )
     ) {
       lastFilePath = fp.path();
@@ -85,14 +90,20 @@ void ExtentSet::insertFromDir(const char* path, bool stopOnError) {
         if (!fp.is_symlink() && fp.is_regular_file())
           insertFromFileImpl(fp.path().c_str(), *this, fm);
       } catch (const std::exception& ex) {
-        if (stopOnError)
-          throw;
         std::cerr << fp.path() << ": " << ex.what() << std::endl;
+        if (stopOnError) {
+          stoppingOnError = true;
+          throw;
+        }
       }
     }
   } catch (const std::exception& ex) {
-    std::cerr << "ExtentSet::insertFromDir: last file before error: " << lastFilePath
-      << "\nExtentSet::insertFromDir: stopping on error: " << ex.what() << std::endl;
+    // This catch block is meant to report exceptions thrown by incrementing
+    // the recursive_directory_iterator; exceptions from looking into a file
+    // are already caught and reported by the try-catch block inside the for
+    if (!stoppingOnError)
+      std::cerr << "ExtentSet::insertFromDir: last file before error: " << lastFilePath
+        << "\nExtentSet::insertFromDir: stopping on error: " << ex.what() << std::endl;
     throw;
   }
 }
