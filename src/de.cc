@@ -54,7 +54,22 @@ int main(int argc, char** argv) {
     }
   }
   if (argc < 2 || nFiles == 0 || printHelp) {
-    cerr << "Usage: " << argv[0] << " [-h] FILE_OR_DIR [FILE_OR_DIR [...]]" << endl;
+    cerr
+      << "Reports the disk space used by each file given as argument, or by\n"
+         "all files in the tree of directory arguments, taking into account \n"
+         "overlapping extents. Multiple files may share the same physical\n"
+         "extents on disk when hardlink or copy-on-write features are used\n"
+         "(on filesystems that support them).\n\n"
+         "Usage: " << argv[0] << " [-h] FILE_OR_DIR [FILE_OR_DIR [...]]\n\n"
+         "Limitations\n"
+         " - All files within a directory argument are expected to be on the\n"
+         "   same filesystem; inconsistent results will be returned if this\n"
+         "   is not true.\n"
+         " - This program only reports the space occupied by file contents;\n"
+         "   the space used by the metadata is not accounted for; this is\n"
+         "   particularly relevant for very short files whose data is stored\n"
+         "   inline with the metadata (for filesystem that do this)."
+      << endl;
     return 1;
   }
 
