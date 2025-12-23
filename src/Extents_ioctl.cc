@@ -73,37 +73,35 @@ void ExtentSet::insertFromFile(const char* path) {
 
 void ExtentSet::insertFromDir(const char* path, bool stopOnError) {
   UniqueMAllocPtr<fiemap> fm(sizeof(fiemap)); // Reuse the same memory to save allocation calls
-  std::string lastFilePath;
-  bool stoppingOnError = false;
-  try {
-    for (
-      const std::filesystem::directory_entry& fp : std::filesystem::recursive_directory_iterator(
-        path, std::filesystem::directory_options::skip_permission_denied
-        // skip_permission_denied will prevent us from reporting when a
-        // directory is inaccessible; however, not using skip_permission_denied
-        // would result in stopping at the first inaccessible directory, which
-        // is even worse; follow_directory_symlink is not used *on purpose*
-      )
-    ) {
-      lastFilePath = fp.path();
-      try {
-        if (!fp.is_symlink() && fp.is_regular_file())
-          insertFromFileImpl(fp.path().c_str(), *this, fm);
-      } catch (const std::exception& ex) {
-        std::cerr << fp.path() << ": " << ex.what() << std::endl;
-        if (stopOnError) {
-          stoppingOnError = true;
-          throw;
-        }
-      }
+  std::filesystem::recursive_directory_iterator it(path), it_before;
+  const std::filesystem::recursive_directory_iterator end; // The default constructor gives and end iterator
+  std::error_code ec;
+  while (it != end) {
+    // Look into the file pointed by it
+    try {
+      if (!it->is_symlink() && it->is_regular_file())
+        insertFromFileImpl(it->path().c_str(), *this, fm);
+    } catch (const std::exception& ex) {
+      std::cerr << it->path() << ": " << ex.what() << std::endl;
+      if (stopOnError)
+        throw;
     }
-  } catch (const std::exception& ex) {
-    // This catch block is meant to report exceptions thrown by incrementing
-    // the recursive_directory_iterator; exceptions from looking into a file
-    // are already caught and reported by the try-catch block inside the for
-    if (!stoppingOnError)
-      std::cerr << "ExtentSet::insertFromDir: last file before error: " << lastFilePath
-        << "\nExtentSet::insertFromDir: stopping on error: " << ex.what() << std::endl;
-    throw;
+    // Try to loop to the next file, checking for errors and reporting them
+    it_before = it; // Save the value of it, since increment() will make it invalid (i.e. an end pointer) on error
+    it.increment(ec);
+    if (ec) {
+      // Check if we called disable_recursion_pending at the previous iteration.
+      // If we did and `it` still failed to increment, we are in an infinite loop.
+      // We break it with an exception, because there is nothing else to do.
+      if (!it_before.recursion_pending()) {
+        throw std::filesystem::filesystem_error("cannot increment recursive directory iterator even after skipping the previous file", ec);
+      }
+      // Take the path from it_before, since it will be invalid (i.e. points to (directory_entry*)nullptr) on error
+      std::cerr << it_before->path() << ": cannot increment recursive directory iterator: " << ec.message() << std::endl;
+      if (stopOnError)
+        throw std::filesystem::filesystem_error("cannot increment recursive directory iterator", ec);
+      it = it_before; // Restore the value before the error
+      it.disable_recursion_pending(); // Try again at next loop, skipping the current directory
+    }
   }
 }
