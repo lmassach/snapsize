@@ -32,7 +32,7 @@
 
 static void insertFromFileImpl(const char* path, ExtentSet& es, UniqueMAllocPtr<fiemap>& fm) {
   // Open file
-  UniqueFileDescriptor fd(path, O_RDONLY | O_NOATIME);
+  UniqueFileDescriptor fd(path, O_RDONLY | O_NOATIME | O_NOCTTY | O_NOFOLLOW);
   // Allocate fiemap (if necessary)
   fm.realloc(sizeof(fiemap));
   memset(fm, 0, sizeof(fiemap));
@@ -68,7 +68,8 @@ static void insertFromFileImpl(const char* path, ExtentSet& es, UniqueMAllocPtr<
 
 void ExtentSet::insertFromFile(const char* path) {
   UniqueMAllocPtr<fiemap> fm(sizeof(fiemap));
-  insertFromFileImpl(path, *this, fm);
+  if (!std::filesystem::is_symlink(path))
+    insertFromFileImpl(path, *this, fm);
 }
 
 void ExtentSet::insertFromDir(const char* path, bool stopOnError) {
